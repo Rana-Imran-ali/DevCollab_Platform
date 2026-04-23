@@ -5,6 +5,10 @@ import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import DashboardLayout from './layouts/DashboardLayout';
 import Dashboard from './pages/Dashboard';
+import Projects from './pages/Projects';
+import Workspace from './pages/Workspace';
+import Chat from './pages/Chat';
+import TeamManagement from './pages/TeamManagement';
 
 function App() {
   return (
@@ -19,12 +23,13 @@ function App() {
         {/* Protected Dashboard Routes */}
         <Route path="/" element={<DashboardLayout />}>
           <Route path="dashboard" element={<Dashboard />} />
-          {/* Add more protected routes here like:
           <Route path="projects" element={<Projects />} />
-          <Route path="tasks" element={<Tasks />} />
-          <Route path="team" element={<Team />} />
-          <Route path="settings" element={<Settings />} /> */}
+          <Route path="chat" element={<Chat />} />
+          <Route path="team" element={<TeamManagement />} />
         </Route>
+
+        {/* Standalone Workspaces */}
+        <Route path="/workspace/:id" element={<Workspace />} />
         
         {/* 404 Route */}
         <Route path="*" element={
