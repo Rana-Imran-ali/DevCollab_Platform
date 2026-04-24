@@ -9,6 +9,9 @@ import Projects from './pages/Projects';
 import Workspace from './pages/Workspace';
 import Chat from './pages/Chat';
 import TeamManagement from './pages/TeamManagement';
+import Tasks from './pages/Tasks';
+import Settings from './pages/Settings';
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -24,8 +27,11 @@ function App() {
         <Route path="/" element={<DashboardLayout />}>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="projects" element={<Projects />} />
+          <Route path="tasks" element={<Tasks />} />
           <Route path="chat" element={<Chat />} />
           <Route path="team" element={<TeamManagement />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="profile" element={<Profile />} />
         </Route>
 
         {/* Standalone Workspaces */}
