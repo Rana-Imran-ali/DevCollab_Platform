@@ -1,109 +1,139 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import Card from '../components/ui/Card';
+import { motion, AnimatePresence } from 'framer-motion';
+import AuthLayout, { ErrorAlert, SuccessAlert } from '../components/auth/AuthLayout';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
+import authService from '../services/authService';
 
-const ForgotPassword = () => {
-  const [email, setEmail] = useState('');
-  const [error, setError] = useState(null);
+const MailIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+  </svg>
+);
+
+export default function ForgotPassword() {
+  const [email, setEmail]       = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [apiError, setApiError] = useState('');
+  const [success, setSuccess]   = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [sent, setSent]           = useState(false);
 
-  const validate = () => {
-    if (!email) {
-      setError('Email is required');
-      return false;
-    }
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      setError('Email is invalid');
-      return false;
-    }
-    setError(null);
+  function validate() {
+    if (!email) { setEmailError('Email is required.'); return false; }
+    if (!/\S+@\S+\.\S+/.test(email)) { setEmailError('Enter a valid email address.'); return false; }
     return true;
-  };
+  }
 
-  const handleReset = (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
-    if (validate()) {
-      setIsLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        setIsLoading(false);
-        setIsSuccess(true);
-      }, 1500);
-    }
-  };
+    setApiError('');
+    setSuccess('');
+    if (!validate()) return;
 
-  const MailIcon = <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>;
+    setIsLoading(true);
+    try {
+      await authService.forgotPassword(email);
+      setSuccess(`Reset instructions sent to ${email}. Check your inbox (and spam folder).`);
+      setSent(true);
+    } catch (err) {
+      setApiError(err.response?.data?.message || 'Unable to send reset link. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background decors */}
-      <div className="absolute top-0 right-0 -mt-20 -mr-20 w-80 h-80 bg-[#FFD700] rounded-full mix-blend-multiply filter blur-[128px] opacity-10 pointer-events-none"></div>
-
-      <div className="sm:mx-auto sm:w-full sm:max-w-md z-10">
-        <Link to="/" className="flex justify-center items-center gap-2 mb-8 group">
-           <div className="w-12 h-12 rounded-xl bg-[#FFD700] flex items-center justify-center text-black font-extrabold text-2xl shadow-[0_0_20px_rgba(255,215,0,0.3)]">
-            D
+    <AuthLayout>
+      <div className="text-center mb-8">
+        <div className="flex justify-center mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-[var(--color-primary-glow)] border border-[rgba(99,102,241,0.3)] flex items-center justify-center">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-[var(--color-primary-light)]" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+            </svg>
           </div>
-        </Link>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-white font-display tracking-tight">
-          Reset password
-        </h2>
-        <p className="mt-2 text-center text-sm text-[#888888]">
-          Remember your password?{' '}
-          <Link to="/login" className="font-medium text-[#FFD700] hover:text-[#FFE033] transition-colors">
-            Sign in here
-          </Link>
+        </div>
+        <h1 className="heading-md text-[var(--color-text-primary)]">Forgot your password?</h1>
+        <p className="mt-2 text-sm text-[var(--color-text-muted)] max-w-sm mx-auto">
+          No worries. Enter your email address and we'll send you a secure reset link.
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md z-10 animate-fade-in-up">
-        <Card className="shadow-2xl">
-          {isSuccess ? (
-            <div className="text-center py-4">
-               <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-500/20">
-                  <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
-               </div>
-               <h3 className="text-white text-xl font-medium font-display mb-2">Check your email</h3>
-               <p className="text-[#888888] text-sm mb-6">
-                 We sent a password reset link to <span className="text-white font-medium">{email}</span>
-               </p>
-               <Button onClick={() => setIsSuccess(false)} variant="outline" className="w-full">
-                 Try another email
-               </Button>
-            </div>
-          ) : (
-            <form className="space-y-6" onSubmit={handleReset} noValidate>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                label="Email address"
-                icon={MailIcon}
-                placeholder="you@company.com"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (error) setError(null);
-                }}
-                error={error}
-                helperText="We'll send you an email with a link to reset your password."
-                autoComplete="email"
-              />
+      <div className="card card-glass p-8 space-y-5">
+        <AnimatePresence mode="wait">
+          {!sent ? (
+            <motion.div
+              key="form"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-4"
+            >
+              <ErrorAlert message={apiError} />
 
-              <div>
-                <Button type="submit" variant="primary" className="w-full text-base py-3" isLoading={isLoading}>
+              <form onSubmit={handleSubmit} noValidate className="space-y-4">
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  label="Email address"
+                  placeholder="you@company.com"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setEmailError(''); setApiError(''); }}
+                  error={emailError}
+                  leftIcon={<MailIcon />}
+                  autoComplete="email"
+                  required
+                />
+
+                <Button type="submit" variant="primary" fullWidth size="lg" isLoading={isLoading}>
                   Send reset link
                 </Button>
-              </div>
-            </form>
-          )}
-        </Card>
-      </div>
-    </div>
-  );
-};
+              </form>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="success"
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="space-y-4"
+            >
+              <SuccessAlert message={success} />
 
-export default ForgotPassword;
+              <div className="text-center space-y-3">
+                <p className="text-sm text-[var(--color-text-muted)]">
+                  Didn't receive it?{' '}
+                  <button
+                    onClick={() => { setSent(false); setSuccess(''); }}
+                    className="text-[var(--color-primary-light)] hover:underline font-medium"
+                  >
+                    Resend email
+                  </button>
+                </p>
+
+                <Button
+                  variant="ghost"
+                  fullWidth
+                  onClick={() => { setSent(false); setEmail(''); setSuccess(''); }}
+                >
+                  Try a different email
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="text-center pt-2">
+          <Link
+            to="/login"
+            className="inline-flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to login
+          </Link>
+        </div>
+      </div>
+    </AuthLayout>
+  );
+}

@@ -9,42 +9,72 @@ use App\Http\Controllers\Api\V1\ChatController;
 
 /*
 |--------------------------------------------------------------------------
-| API Routes
+| API Routes — DevCollab Platform v1
 |--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
 */
 
 Route::prefix('v1')->group(function () {
-    
+
     // ==========================================
-    // 1. Authentication
+    // 1. AUTHENTICATION (Public Routes)
     // ==========================================
     Route::prefix('auth')->group(function () {
-        Route::post('/register', [AuthController::class, 'register']);
-        Route::post('/login', [AuthController::class, 'login']);
-        
-        // Protected Auth Routes
+
+        // Registration & Login
+        // Rate limited: 5 attempts per minute per IP (brute-force protection)
+        Route::middleware('throttle:5,1')->group(function () {
+            Route::post('/register', [AuthController::class, 'register']);
+            Route::post('/login', [AuthController::class, 'login']);
+        });
+
+        // Password Reset Flow
+        // Rate limited: 3 attempts per hour per IP
+        Route::middleware('throttle:3,60')->group(function () {
+            Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+            Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+        });
+
+        // Email Verification via signed URL
+        Route::get('/verify-email/{id}/{hash}', [AuthController::class, 'verifyEmail'])
+            ->middleware(['signed'])
+            ->name('verification.verify');
+
+        // OAuth Redirects & Callbacks (Google & GitHub)
+        // Stateless OAuth for SPA — no session required
+        Route::get('/{provider}/redirect', [AuthController::class, 'oauthRedirect'])
+            ->where('provider', 'google|github');
+        Route::get('/{provider}/callback', [AuthController::class, 'oauthCallback'])
+            ->where('provider', 'google|github');
+
+        // ──────────────────────────────────────
+        // Protected Auth Routes (Require Token)
+        // ──────────────────────────────────────
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout']);
             Route::get('/me', [AuthController::class, 'me']);
+
+            // Resend email verification link
+            Route::post('/email/resend', [AuthController::class, 'resendVerificationEmail'])
+                ->middleware('throttle:3,60');
         });
     });
 
     // ==========================================
-    // Protected Routes (Require Authentication)
+    // Protected Routes
+    // Requires: Valid token + Verified email
     // ==========================================
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'verified.email'])->group(function () {
 
         // ==========================================
-        // 2. User & Profile Management (Placeholders)
+        // 2. User & Profile Management
         // ==========================================
         Route::prefix('profiles')->group(function () {
-            Route::get('/{id}', function ($id) { return response()->json(['message' => 'Profile info']); });
-            Route::put('/me', function () { return response()->json(['message' => 'Profile updated']); });
+            Route::get('/{id}', function ($id) {
+                return response()->json(['status' => 'success', 'data' => ['id' => $id]]);
+            });
+            Route::put('/me', function () {
+                return response()->json(['status' => 'success', 'message' => 'Profile updated']);
+            });
         });
 
         // ==========================================
@@ -62,25 +92,45 @@ Route::prefix('v1')->group(function () {
         });
 
         // ==========================================
-        // 5. Problem Sharing Hub (Placeholders)
+        // 5. Problem Sharing Hub
         // ==========================================
         Route::prefix('problems')->group(function () {
-            Route::get('/', function () { return response()->json(['data' => []]); });
-            Route::post('/', function () { return response()->json(['message' => 'Problem created']); });
+            Route::get('/', function () {
+                return response()->json(['status' => 'success', 'data' => []]);
+            });
+            Route::post('/', function () {
+                return response()->json(['status' => 'success', 'message' => 'Problem created'], 201);
+            });
         });
 
         // ==========================================
-        // 6. Communities (Placeholders)
+        // 6. Communities
         // ==========================================
         Route::prefix('communities')->group(function () {
-            Route::get('/', function () { return response()->json(['data' => []]); });
+            Route::get('/', function () {
+                return response()->json(['status' => 'success', 'data' => []]);
+            });
         });
 
         // ==========================================
-        // 7. AI Features (Placeholders)
+        // 7. AI Features
+        // Rate limited: 20 requests per hour per user
         // ==========================================
-        Route::prefix('ai')->group(function () {
-            Route::post('/code-review', function () { return response()->json(['message' => 'Review processing']); });
+        Route::prefix('ai')
+            ->middleware('throttle:20,60')
+            ->group(function () {
+                Route::post('/code-review', function () {
+                    return response()->json(['status' => 'success', 'message' => 'Review processing']);
+                });
+            });
+
+        // ==========================================
+        // 8. Admin-Only Routes (role:admin)
+        // ==========================================
+        Route::middleware('role:admin')->prefix('admin')->group(function () {
+            Route::get('/users', function () {
+                return response()->json(['status' => 'success', 'data' => []]);
+            });
         });
     });
 });

@@ -1,53 +1,78 @@
-import React, { forwardRef } from 'react';
+/**
+ * Input — Reusable form input
+ * Supports: label, error, helperText, leftIcon, rightIcon, textarea mode
+ */
+
+import { forwardRef } from 'react';
 
 const Input = forwardRef(({
   id,
   label,
   error,
-  icon,
   helperText,
+  leftIcon,
+  rightIcon,
   className = '',
-  fullWidth = true,
+  as: Tag = 'input',
+  rows = 4,
+  required = false,
   ...props
 }, ref) => {
-  const containerClass = fullWidth ? 'w-full' : 'w-auto';
+
+  const inputClass = [
+    'input',
+    error ? 'input-error' : '',
+    leftIcon  ? 'pl-9'  : '',
+    rightIcon ? 'pr-9'  : '',
+    Tag === 'textarea' ? 'resize-none leading-relaxed' : '',
+    className,
+  ].join(' ');
 
   return (
-    <div className={`${containerClass} flex flex-col gap-1.5`}>
+    <div className="form-group">
       {label && (
-        <label htmlFor={id} className="text-sm font-medium text-gray-300">
+        <label htmlFor={id} className="form-label">
           {label}
+          {required && <span className="text-[var(--color-danger)] ml-1">*</span>}
         </label>
       )}
+
       <div className="relative">
-        {icon && (
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#888888]">
-            {icon}
+        {leftIcon && (
+          <div className="absolute inset-y-0 left-0 flex items-center pl-2.5 pointer-events-none text-[var(--color-text-muted)]">
+            {leftIcon}
           </div>
         )}
-        <input
-          ref={ref}
-          id={id}
-          className={`
-            bg-[#1A1A1A] border border-[#3A3A3A] text-white text-sm rounded-md block w-full
-            transition-colors duration-200
-            focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 focus:border-[#FFD700]
-            disabled:opacity-50 disabled:cursor-not-allowed
-            placeholder:text-[#555555]
-            ${icon ? 'pl-10' : 'pl-3'}
-            ${error ? 'border-red-500 focus:ring-red-500/30 focus:border-red-500' : ''}
-            py-2.5 px-3
-            ${className}
-          `}
-          {...props}
-        />
+
+        {Tag === 'textarea' ? (
+          <textarea
+            ref={ref}
+            id={id}
+            rows={rows}
+            className={inputClass}
+            {...props}
+          />
+        ) : (
+          <input
+            ref={ref}
+            id={id}
+            className={inputClass}
+            {...props}
+          />
+        )}
+
+        {rightIcon && (
+          <div className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-[var(--color-text-muted)]">
+            {rightIcon}
+          </div>
+        )}
       </div>
-      {error && <span className="text-xs text-red-500 font-medium">{error}</span>}
-      {helperText && !error && <span className="text-xs text-[#888888]">{helperText}</span>}
+
+      {error      && <span className="form-error">{error}</span>}
+      {helperText && !error && <span className="form-helper">{helperText}</span>}
     </div>
   );
 });
 
 Input.displayName = 'Input';
-
 export default Input;

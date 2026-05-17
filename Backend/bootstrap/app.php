@@ -13,7 +13,18 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // ==========================================
+        // Custom Middleware Aliases
+        // ==========================================
+        $middleware->alias([
+            'verified.email' => \App\Http\Middleware\EnsureEmailIsVerified::class,
+            'role'           => \App\Http\Middleware\CheckRole::class,
+        ]);
+
+        // ==========================================
+        // Rate Limiting (Brute Force Protection)
+        // ==========================================
+        $middleware->throttleWithRedis();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
